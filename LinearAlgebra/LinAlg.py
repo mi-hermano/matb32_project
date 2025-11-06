@@ -9,7 +9,6 @@ import numpy as np
 from scipy.optimize import fmin
 import pandas as pd
 from matplotlib import cm
-from matplotlib.ticker import LinearLocator
 
 def form(params, x):
     a,b = params
@@ -22,8 +21,8 @@ def least_square(x, y):
     A_t = np.ones((2, len(x)))
     A_t[0] = x
     A = np.transpose(A_t)
-    A_tA_inv = np.linalg.inv(np.matmul(A_t, A))
-    ab = np.matmul(np.matmul(A_tA_inv, A_t), y)
+    A_tA_inv = np.linalg.inv(np.linalg.matmul(A_t, A))
+    ab = np.linalg.matmul(np.linalg.matmul(A_tA_inv, A_t), y)
     return ab
 
 def plot(ab, x, y):
@@ -67,22 +66,49 @@ def surfaceplot(ab, x, y):
     plt.scatter(ab[0], ab[1], c='k', marker='*', label=f'a = {A:.3f}, b = {B:.3f}')
     plt.legend()
     
-def P(x, y):
-    x_t = np.ones((2, len(x)))
-    x_t[0] = x
-    x = np.transpose(x_t)  
-    P = np.matmul(x, np.matmul(np.linalg.inv(np.matmul(x_t, x)), x_t))
-    return P
-
-def yhat(x, y):
-    ab = least_square(x1, y1)
+def yhat(x, y): #Task 4
+    ab = least_square(x, y)
     A_t = np.ones((2, len(x)))
     A_t[0] = x
     A = np.transpose(A_t)
-    yhat = np.matmul(A,ab)
+    yhat = np.linalg.matmul(A, ab)
     return yhat
+
+def projection(x, y): #Task 4
+    v = yhat(x, y)[:, np.newaxis]
+    v_t = np.transpose(v)
+    P = np.linalg.matmul(v, v_t)/np.linalg.matmul(v_t, v)
+    return P
+
+def projection_test(x, y): #Task 5
+    P = projection(x, y)
+    P_t = np.transpose(P)
+    P2 = np.linalg.matmul(P, P)
     
+    idempotent, symmetric = True, True
+    allowance = 10**(-16)
     
+    for i in range(P.shape[0]):
+        for j in range(P.shape[1]):
+            if (P2 - P)[i,j] > allowance:
+                idempotent = False
+            elif (P_t - P)[i,j] > allowance:
+                symmetric = False
+    
+    print("Idempotent: {} \nSymmetric: {}".format(idempotent, symmetric))
+    
+def ort_proj_check(proj, orig):
+    allowance = 10**(-8)
+    if np.dot(proj, orig-proj) > allowance:
+        print("The vector is not the the result of an orthogonal projection of the original vector")
+    else: 
+        print("The vector is the the result of an orthogonal projection of the original vector")
+        
+def reflection(x, y):
+    P = projection(x, y)
+    I = np.identity(P.shape[0])
+    R = 2*P - I
+    return R
     
 
 data1 = pd.read_csv('regression_1.dat',sep=r'\s*,\s*')
@@ -106,26 +132,48 @@ result_square.append(least_square(x2, y2[0]))
 result_square.append(least_square(x2, y2[1]))
 result_square.append(least_square(x2, y2[2]))
 
-
+#%%
 plt.subplot(2,2,1)
 plot(result_square[0], x1, y1)
-#plt.scatter(x1, yhat)
+plt.scatter(x1, yhat(x1,y1))
+plt.scatter(x1, np.matmul(reflection(x1, y1), y1))
 plt.subplot(2,2,2)
 plot(result_square[1], x2, y2[0])
+plt.scatter(x2, yhat(x2,y2[0]))
+plt.scatter(x2, np.matmul(reflection(x2, y2[0]), y2[0]))
 plt.subplot(2,2,3)
 plot(result_square[2], x2, y2[1])
+plt.scatter(x2, yhat(x2,y2[1]))
+plt.scatter(x2, np.matmul(reflection(x2, y2[1]), y2[1]))
 plt.subplot(2,2,4)
 plot(result_square[3], x2, y2[2])
+plt.scatter(x2, yhat(x2,y2[2]))
+plt.scatter(x2, np.matmul(reflection(x2, y2[2]), y2[2]))
 plt.show()
 
-#surfaceplot(result_square[0], x1, y1)
-#surfaceplot(result_square[1], x2, y2[0])
-#surfaceplot(result_square[2], x2, y2[1])
-#surfaceplot(result_square[3], x2, y2[2])
-a= np.matmul(P(x1, y1), y1)
-b= yhat(x1, y1)
-plt.subplot(2,2,1)
-plt.scatter(x1, a, color='black', marker='*')
-plt.scatter(x1, b, color='g')
-plt.show()
-a-b
+
+#%%
+surfaceplot(result_square[0], x1, y1)
+surfaceplot(result_square[1], x2, y2[0])
+surfaceplot(result_square[2], x2, y2[1])
+surfaceplot(result_square[3], x2, y2[2])
+
+#%%
+print("x1, x2:")
+projection_test(x1, y1)
+print("\nx2, y2[0]:")
+projection_test(x2, y2[0])
+print("\nx2, y2[1]:")
+projection_test(x2, y2[1])
+print("\nx2, y2[2]:")
+projection_test(x2, y2[2])
+
+#%%
+print("x1, y:1")
+ort_proj_check(yhat(x1,y1), y1)
+print("\nx2, y2[0]:")
+ort_proj_check(yhat(x2,y2[0]), y2[0])
+print("\nx2, y2[1]:")
+ort_proj_check(yhat(x2,y2[1]), y2[1])
+print("\nx2, y2[2]:")
+ort_proj_check(yhat(x2,y2[2]), y2[2])
