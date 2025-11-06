@@ -22,8 +22,8 @@ def least_square(x, y):
     A_t = np.ones((2, len(x)))
     A_t[0] = x
     A = np.transpose(A_t)
-    A_tA_inv = np.linalg.inv(np.linalg.matmul(A_t, A))
-    ab = np.linalg.matmul(np.linalg.matmul(A_tA_inv, A_t), y)
+    A_tA_inv = np.linalg.inv(np.matmul(A_t, A))
+    ab = np.matmul(np.matmul(A_tA_inv, A_t), y)
     return ab
 
 def plot(ab, x, y):
@@ -71,7 +71,7 @@ def P(x, y):
     x_t = np.ones((2, len(x)))
     x_t[0] = x
     x = np.transpose(x_t)  
-    P = np.linalg.matmul(x, np.linalg.matmul(np.linalg.inv(np.linalg.matmul(x_t, x)), x_t))
+    P = np.matmul(x, np.matmul(np.linalg.inv(np.matmul(x_t, x)), x_t))
     return P
 
 def yhat(x, y):
@@ -79,7 +79,7 @@ def yhat(x, y):
     A_t = np.ones((2, len(x)))
     A_t[0] = x
     A = np.transpose(A_t)
-    yhat = np.linalg.matmul(A,ab)
+    yhat = np.matmul(A,ab)
     return yhat
     
     
@@ -122,7 +122,7 @@ plt.show()
 #surfaceplot(result_square[1], x2, y2[0])
 #surfaceplot(result_square[2], x2, y2[1])
 #surfaceplot(result_square[3], x2, y2[2])
-a= np.linalg.matmul(P(x1, y1), y1)
+a= np.matmul(P(x1, y1), y1)
 b= yhat(x1, y1)
 plt.subplot(2,2,1)
 plt.scatter(x1, a, color='black', marker='*')
